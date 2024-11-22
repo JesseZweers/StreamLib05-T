@@ -9,7 +9,7 @@ interface AuthState {
   isAuthenticated: boolean
   isLoading: boolean
   setAuthenticated: (serverId: number) => void
-  login: (credentials: { url: string; username: string; password: string }) => Promise<void>
+  login: (credentials: { url: string; username: string; password: string }) => Promise<{ needsSetup: boolean }>
   logout: () => Promise<void>
   checkAuthStatus: () => Promise<void>
 }
@@ -33,6 +33,7 @@ export const useAuth = create<AuthState>()(
           })
           // Store credentials for stream URLs
           localStorage.setItem('xtream_credentials', JSON.stringify(credentials))
+          return result
         } catch (error) {
           set({ isLoading: false })
           throw error

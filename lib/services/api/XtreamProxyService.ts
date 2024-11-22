@@ -3,15 +3,18 @@ import { CORS_HEADERS, API_USER_AGENT, ALLOWED_HOSTS } from '@/lib/config/consta
 
 export class XtreamProxyService {
   static async proxyRequest(url: string): Promise<Response> {
-    // Validate URL and host
     try {
-      const urlObj = new URL(url)
+      // Ensure we have a valid URL
+      const targetUrl = decodeURIComponent(url)
+      const urlObj = new URL(targetUrl)
+
+      // Validate host
       if (!ALLOWED_HOSTS.includes(urlObj.hostname)) {
-        throw new Error('Invalid host')
+        throw new Error(`Invalid host: ${urlObj.hostname}`)
       }
 
       // Forward request to Xtream server
-      const response = await fetch(url, {
+      const response = await fetch(targetUrl, {
         headers: {
           'Accept': '*/*',
           'User-Agent': API_USER_AGENT
@@ -23,7 +26,6 @@ export class XtreamProxyService {
       }
 
       // Get response data and content type
-      const data = await response.arrayBuffer()
       const contentType = response.headers.get('content-type')
       const headers = new Headers(CORS_HEADERS)
       
@@ -31,6 +33,14 @@ export class XtreamProxyService {
         headers.set('Content-Type', contentType)
       }
 
+      // Handle JSON responses
+      if (contentType?.includes('application/json')) {
+        const data = await response.json()
+        return NextResponse.json(data, { headers })
+      }
+
+      // Handle binary/text responses
+      const data = await response.arrayBuffer()
       return new NextResponse(data, { headers })
     } catch (error) {
       console.error('Proxy error:', error)

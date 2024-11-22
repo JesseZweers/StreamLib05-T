@@ -7,10 +7,40 @@ import type { AuthResponse, XtreamCredentials } from '@/types/xtream'
 
 export class AuthService {
   static async login(credentials: XtreamCredentials) {
-    // Normalize URL
     const baseUrl = XtreamAuthService.normalizeUrl(credentials.url)
     
-    // Verify credentials with Xtream API
+    // First check if server exists with valid data
+    const existingServer = await ServerRepository.getByUrl(baseUrl)
+    if (existingServer) {
+      const storedCredentials = await CredentialsRepository.findCredentials(
+        credentials.username,
+        credentials.password,
+        existingServer.id
+      )
+
+      if (storedCredentials) {
+        // Verify data integrity
+        const hasValidData = existingServer.categoryCount > 0 && existingServer.channelCount > 0
+        
+        if (hasValidData) {
+          // Set auth cookie and return early - no need to re-verify with API
+          cookies().set('auth', JSON.stringify({
+            serverId: existingServer.id,
+            url: baseUrl,
+            username: credentials.username
+          }), AUTH_COOKIE_OPTIONS)
+
+          return {
+            serverId: existingServer.id,
+            isSetup: true,
+            needsSetup: false
+          }
+        }
+        // If data is incomplete, continue to API verification and setup
+      }
+    }
+
+    // Verify with Xtream API for new or incomplete servers
     const authResponse = await XtreamAuthService.authenticate(
       baseUrl,
       credentials.username,
@@ -21,59 +51,34 @@ export class AuthService {
       throw new Error('Invalid credentials')
     }
 
-    // Store auth data
-    const result = await this.storeAuthData(credentials, authResponse)
-
-    // Set auth cookie
-    cookies().set('auth', JSON.stringify({
-      serverId: result.serverId,
-      url: baseUrl,
-      username: credentials.username
-    }), AUTH_COOKIE_OPTIONS)
-
-    return result
-  }
-
-  static async storeAuthData(credentials: XtreamCredentials, authData: AuthResponse) {
-    if (!authData.user_info?.auth) {
-      throw new Error('Invalid authentication data')
-    }
-
-    // Create or update server record
-    const baseUrl = XtreamAuthService.normalizeUrl(credentials.url)
+    // Store new auth data
     const serverId = await ServerRepository.createOrUpdate(baseUrl)
-
-    // Store credentials
     await CredentialsRepository.save(
       credentials.username,
       credentials.password,
       serverId
     )
 
-    // Get server status
-    const serverInfo = await ServerRepository.getByUrl(baseUrl)
-    const isSetup = serverInfo ? serverInfo.categoryCount > 0 && serverInfo.channelCount > 0 : false
+    // Set auth cookie
+    cookies().set('auth', JSON.stringify({
+      serverId,
+      url: baseUrl,
+      username: credentials.username
+    }), AUTH_COOKIE_OPTIONS)
 
+    // New or incomplete server always needs setup
     return {
       serverId,
-      isSetup
+      isSetup: false,
+      needsSetup: true
     }
-  }
-
-  static async logout() {
-    const session = await this.getSession()
-    if (session) {
-      // Clear any server-side session data if needed
-      await CredentialsRepository.clearSession(session.serverId, session.username)
-    }
-    cookies().delete('auth')
   }
 
   static async verify(credentials: XtreamCredentials) {
     try {
       const baseUrl = XtreamAuthService.normalizeUrl(credentials.url)
       
-      // First check if server exists and has valid credentials
+      // Check existing server first
       const server = await ServerRepository.getByUrl(baseUrl)
       if (server) {
         const storedCredentials = await CredentialsRepository.findCredentials(
@@ -83,15 +88,17 @@ export class AuthService {
         )
 
         if (storedCredentials) {
+          const hasValidData = server.categoryCount > 0 && server.channelCount > 0
           return {
             isValid: true,
             serverId: server.id,
-            isSetup: server.categoryCount > 0 && server.channelCount > 0
+            isSetup: hasValidData,
+            needsSetup: !hasValidData
           }
         }
       }
 
-      // If not found in database, verify with Xtream API
+      // Verify with API for new servers
       const authResponse = await XtreamAuthService.authenticate(
         baseUrl,
         credentials.username,
@@ -106,6 +113,14 @@ export class AuthService {
       console.error('Verification failed:', error)
       return { isValid: false }
     }
+  }
+
+  static async logout() {
+    const session = await this.getSession()
+    if (session) {
+      await CredentialsRepository.clearSession(session.serverId, session.username)
+    }
+    cookies().delete('auth')
   }
 
   static async getSession() {

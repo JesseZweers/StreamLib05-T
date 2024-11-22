@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { ChannelService } from '@/lib/services/server/ChannelService'
+import { CORS_HEADERS } from '@/lib/config/api'
 
 export async function GET(request: Request) {
   try {
@@ -10,17 +11,24 @@ export async function GET(request: Request) {
     if (!serverId) {
       return NextResponse.json(
         { error: 'Server ID is required' },
-        { status: 400 }
+        { status: 400, headers: CORS_HEADERS }
       )
     }
 
     const channels = await ChannelService.getChannels(parseInt(serverId), categoryId || undefined)
-    return NextResponse.json(channels || [])
+    return NextResponse.json(channels || [], { headers: CORS_HEADERS })
   } catch (error) {
     console.error('Failed to fetch channels:', error)
     return NextResponse.json(
       { error: 'Failed to fetch channels' },
-      { status: 500 }
+      { status: 500, headers: CORS_HEADERS }
     )
   }
+}
+
+export async function OPTIONS() {
+  return NextResponse.json(null, { 
+    status: 204, 
+    headers: CORS_HEADERS 
+  })
 }

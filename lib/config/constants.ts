@@ -5,12 +5,13 @@ export const ALLOWED_HOSTS = [
   '185.245.1.14',
   '185.245.1.101',
   '185.245.1.104'
-] as const
+] as string[]
 
 export const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': '*'
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': '*',
+  'Access-Control-Max-Age': '86400'
 } as const
 
 export const API_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'

@@ -35,12 +35,19 @@ export function XtreamLogin() {
     setIsLoading(true)
     
     try {
-      await login(credentials)
+      const result = await login(credentials)
       toast({
         title: "Success",
         description: "Successfully connected to the server",
       })
-      router.push('/live')
+      
+      // Redirect based on setup status
+      if (result.needsSetup) {
+        router.push('/setup')
+      } else {
+        router.push('/live')
+      }
+      
       setShowLogin(false)
     } catch (error) {
       console.error('Login failed:', error)

@@ -1,8 +1,17 @@
-export function normalizeUrl(url: string): string {
-  const trimmedUrl = url.trim().replace(/\/+$/, '')
-  return /^https?:\/\//i.test(trimmedUrl) ? trimmedUrl : `http://${trimmedUrl}`
+// Client-side URL utilities
+export function getClientBaseUrl(): string {
+  if (typeof window === 'undefined') {
+    return 'http://localhost:3000'
+  }
+  return window.location.origin
 }
 
-export function getStreamUrl(baseUrl: string, username: string, password: string, streamId: number): string {
-  return `${baseUrl}/live/${username}/${password}/${streamId}.m3u8`
+// Server-side URL utilities
+export async function getServerBaseUrl(): Promise<string> {
+  // This should only be used in server components
+  const { headers } = await import('next/headers')
+  const headersList = headers()
+  const host = headersList.get('host') || 'localhost:3000'
+  const protocol = headersList.get('x-forwarded-proto') || 'http'
+  return `${protocol}://${host}`
 }
