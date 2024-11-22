@@ -2,6 +2,7 @@ import { Inter } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
 import Navbar from '@/components/navbar'
 import { DatabaseService } from '@/lib/services/server/DatabaseService'
+import { AuthProvider } from '@/providers/auth-provider'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -37,10 +38,12 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Navbar />
-          <main className="container mx-auto px-4 py-8">
-            {children}
-          </main>
+          <AuthProvider>
+            <Navbar />
+            <main className="container mx-auto px-4 py-8">
+              {children}
+            </main>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

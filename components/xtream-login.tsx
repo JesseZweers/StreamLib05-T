@@ -15,14 +15,15 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
 import { TEST_CREDENTIALS, isDevelopment } from '@/lib/config/config'
-import { Loader2 } from 'lucide-react'
+import { Link2, Loader2 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 
-export function XtreamLogin({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+export function XtreamLogin() {
   const router = useRouter()
   const { toast } = useToast()
   const { login } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
+  const [showLogin, setShowLogin] = useState(false)
   const [credentials, setCredentials] = useState({
     username: '',
     password: '',
@@ -40,7 +41,7 @@ export function XtreamLogin({ open, onOpenChange }: { open: boolean; onOpenChang
         description: "Successfully connected to the server",
       })
       router.push('/live')
-      onOpenChange(false)
+      setShowLogin(false)
     } catch (error) {
       console.error('Login failed:', error)
       toast({
@@ -58,83 +59,90 @@ export function XtreamLogin({ open, onOpenChange }: { open: boolean; onOpenChang
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Connect to Xtream Service</DialogTitle>
-          <DialogDescription>
-            Enter your Xtream credentials to access live TV channels.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Button size="lg" onClick={() => setShowLogin(true)}>
+        <Link2 className="mr-2 h-4 w-4" />
+        Connect
+      </Button>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="url">Server URL</Label>
-            <Input
-              id="url"
-              placeholder="http://example.com:port"
-              value={credentials.url}
-              onChange={(e) => setCredentials(prev => ({ ...prev, url: e.target.value }))}
-              required
-              disabled={isLoading}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
-            <Input
-              id="username"
-              value={credentials.username}
-              onChange={(e) => setCredentials(prev => ({ ...prev, username: e.target.value }))}
-              required
-              disabled={isLoading}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={credentials.password}
-              onChange={(e) => setCredentials(prev => ({ ...prev, password: e.target.value }))}
-              required
-              disabled={isLoading}
-            />
-          </div>
+      <Dialog open={showLogin} onOpenChange={setShowLogin}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Connect to Xtream Service</DialogTitle>
+            <DialogDescription>
+              Enter your Xtream credentials to access live TV channels.
+            </DialogDescription>
+          </DialogHeader>
 
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            {isDevelopment && (
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={handleTestCredentials}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="url">Server URL</Label>
+              <Input
+                id="url"
+                placeholder="http://example.com:port"
+                value={credentials.url}
+                onChange={(e) => setCredentials(prev => ({ ...prev, url: e.target.value }))}
+                required
                 disabled={isLoading}
-              >
-                Use Test Credentials
-              </Button>
-            )}
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isLoading}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Connecting...
-                  </>
-                ) : (
-                  'Connect'
-                )}
-              </Button>
+              />
             </div>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                value={credentials.username}
+                onChange={(e) => setCredentials(prev => ({ ...prev, username: e.target.value }))}
+                required
+                disabled={isLoading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={credentials.password}
+                onChange={(e) => setCredentials(prev => ({ ...prev, password: e.target.value }))}
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              {isDevelopment && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleTestCredentials}
+                  disabled={isLoading}
+                >
+                  Use Test Credentials
+                </Button>
+              )}
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowLogin(false)}
+                  disabled={isLoading}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Connecting...
+                    </>
+                  ) : (
+                    'Connect'
+                  )}
+                </Button>
+              </div>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

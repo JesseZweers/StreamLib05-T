@@ -41,7 +41,7 @@ export class ChannelRepository extends BaseRepository {
   }
 
   static async saveBatch(channels: Channel[], serverId: number): Promise<void> {
-    const BATCH_SIZE = 100
+    const BATCH_SIZE = 250
     for (let i = 0; i < channels.length; i += BATCH_SIZE) {
       const batch = channels.slice(i, i + BATCH_SIZE)
       const placeholders = batch.map(() => 

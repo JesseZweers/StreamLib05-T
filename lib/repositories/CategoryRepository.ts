@@ -16,7 +16,7 @@ export class CategoryRepository extends BaseRepository {
   }
 
   static async saveBatch(categories: Category[], serverId: number): Promise<void> {
-    const BATCH_SIZE = 100
+    const BATCH_SIZE = 250
     for (let i = 0; i < categories.length; i += BATCH_SIZE) {
       const batch = categories.slice(i, i + BATCH_SIZE)
       const placeholders = batch.map(() => '(?, ?, ?, ?)').join(',')

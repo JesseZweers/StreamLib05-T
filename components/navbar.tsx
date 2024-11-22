@@ -1,26 +1,23 @@
 "use client"
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Search } from '@/components/search'
 import { Button } from '@/components/ui/button'
 import { Tv, LogOut, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils/utils'
 import { useAuth } from '@/hooks/use-auth'
-import { useEffect } from 'react'
 
 export default function Navbar() {
   const pathname = usePathname()
-  const { isAuthenticated, serverId, logout, checkAuthStatus, isLoading } = useAuth()
-
-  useEffect(() => {
-    checkAuthStatus()
-  }, [checkAuthStatus])
+  const router = useRouter()
+  const { isAuthenticated, serverId, logout, isLoading } = useAuth()
 
   const handleLogout = async () => {
     try {
       await logout()
+      router.push('/')
     } catch (error) {
       console.error('Logout failed:', error)
     }

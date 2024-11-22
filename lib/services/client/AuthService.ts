@@ -24,7 +24,8 @@ export class AuthService {
   static async logout() {
     const response = await fetch('/api/auth/logout', { method: 'POST' })
     if (!response.ok) {
-      throw new Error('Logout failed')
+      const data = await response.json()
+      throw new Error(data.error || 'Logout failed')
     }
   }
 
@@ -39,7 +40,8 @@ export class AuthService {
     })
 
     if (!response.ok) {
-      throw new Error('Verification failed')
+      const data = await response.json()
+      throw new Error(data.error || 'Verification failed')
     }
 
     return response.json()

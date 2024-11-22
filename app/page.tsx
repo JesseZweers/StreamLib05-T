@@ -2,20 +2,13 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Link2, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { XtreamLogin } from '@/components/xtream-login'
-import { useState } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 
 export default function Home() {
-  const [showLogin, setShowLogin] = useState(false)
   const router = useRouter()
-  const { isAuthenticated, isLoading, checkAuthStatus } = useAuth()
-
-  useEffect(() => {
-    checkAuthStatus()
-  }, [checkAuthStatus])
+  const { isAuthenticated, isLoading } = useAuth()
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -39,13 +32,7 @@ export default function Home() {
       <p className="max-w-[600px] text-zinc-500 md:text-xl dark:text-zinc-400 mx-auto">
         Your personal streaming library for all your favorite content
       </p>
-      <div className="flex gap-4">
-        <Button size="lg" onClick={() => setShowLogin(true)}>
-          <Link2 className="mr-2 h-4 w-4" />
-          Connect
-        </Button>
-      </div>
-      <XtreamLogin open={showLogin} onOpenChange={setShowLogin} />
+      <XtreamLogin />
     </div>
   )
 }

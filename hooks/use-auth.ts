@@ -2,8 +2,7 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { XtreamAuthService } from '@/lib/services/api/XtreamAuthService'
-import { ServerService } from '@/lib/services/client/ServerService'
+import { AuthService } from '@/lib/services/client/AuthService'
 
 interface AuthState {
   serverId: number | null
@@ -26,27 +25,14 @@ export const useAuth = create<AuthState>()(
       login: async (credentials) => {
         set({ isLoading: true })
         try {
-          // Normalize URL
-          const normalizedUrl = XtreamAuthService.normalizeUrl(credentials.url)
-          const normalizedCredentials = { ...credentials, url: normalizedUrl }
-
-          // Store raw credentials for stream URLs
-          localStorage.setItem('xtream_credentials', JSON.stringify(normalizedCredentials))
-
-          // Authenticate with server
-          const response = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(normalizedCredentials)
+          const result = await AuthService.login(credentials)
+          set({ 
+            serverId: result.serverId, 
+            isAuthenticated: true, 
+            isLoading: false 
           })
-
-          if (!response.ok) {
-            const data = await response.json()
-            throw new Error(data.error || 'Login failed')
-          }
-
-          const { serverId } = await response.json()
-          set({ serverId, isAuthenticated: true, isLoading: false })
+          // Store credentials for stream URLs
+          localStorage.setItem('xtream_credentials', JSON.stringify(credentials))
         } catch (error) {
           set({ isLoading: false })
           throw error
@@ -56,7 +42,7 @@ export const useAuth = create<AuthState>()(
         set({ isLoading: true })
         try {
           localStorage.removeItem('xtream_credentials')
-          await fetch('/api/auth/logout', { method: 'POST' })
+          await AuthService.logout()
           set({ serverId: null, isAuthenticated: false, isLoading: false })
         } catch (error) {
           set({ isLoading: false })
@@ -64,7 +50,7 @@ export const useAuth = create<AuthState>()(
         }
       },
       checkAuthStatus: async () => {
-        if (!get().isLoading) return // Skip if already checked
+        if (!get().isLoading) return
 
         try {
           const credentials = localStorage.getItem('xtream_credentials')
@@ -73,11 +59,15 @@ export const useAuth = create<AuthState>()(
             return
           }
 
-          const { url } = JSON.parse(credentials)
-          const serverInfo = await ServerService.checkServer(url)
+          const parsed = JSON.parse(credentials)
+          const result = await AuthService.verify(parsed)
           
-          if (serverInfo.exists && serverInfo.isReady) {
-            set({ isAuthenticated: true, serverId: serverInfo.id, isLoading: false })
+          if (result.isValid) {
+            set({ 
+              isAuthenticated: true, 
+              serverId: result.serverId, 
+              isLoading: false 
+            })
           } else {
             set({ isAuthenticated: false, serverId: null, isLoading: false })
           }

@@ -1,5 +1,3 @@
-"use client"
-
 import { cookies } from 'next/headers'
 import { CredentialsRepository } from '@/lib/repositories/CredentialsRepository'
 import { ServerRepository } from '@/lib/repositories/ServerRepository'
@@ -72,28 +70,28 @@ export class AuthService {
   }
 
   static async verify(credentials: XtreamCredentials) {
-    const baseUrl = XtreamAuthService.normalizeUrl(credentials.url)
-    
-    // First check if server exists and has valid credentials
-    const server = await ServerRepository.getByUrl(baseUrl)
-    if (server) {
-      const storedCredentials = await CredentialsRepository.findCredentials(
-        credentials.username,
-        credentials.password,
-        server.id
-      )
+    try {
+      const baseUrl = XtreamAuthService.normalizeUrl(credentials.url)
+      
+      // First check if server exists and has valid credentials
+      const server = await ServerRepository.getByUrl(baseUrl)
+      if (server) {
+        const storedCredentials = await CredentialsRepository.findCredentials(
+          credentials.username,
+          credentials.password,
+          server.id
+        )
 
-      if (storedCredentials) {
-        return {
-          isValid: true,
-          serverId: server.id,
-          isSetup: server.categoryCount > 0 && server.channelCount > 0
+        if (storedCredentials) {
+          return {
+            isValid: true,
+            serverId: server.id,
+            isSetup: server.categoryCount > 0 && server.channelCount > 0
+          }
         }
       }
-    }
 
-    // If not found in database, verify with Xtream API
-    try {
+      // If not found in database, verify with Xtream API
       const authResponse = await XtreamAuthService.authenticate(
         baseUrl,
         credentials.username,
@@ -104,7 +102,8 @@ export class AuthService {
         isValid: !!authResponse.user_info?.auth,
         needsSetup: true
       }
-    } catch {
+    } catch (error) {
+      console.error('Verification failed:', error)
       return { isValid: false }
     }
   }
